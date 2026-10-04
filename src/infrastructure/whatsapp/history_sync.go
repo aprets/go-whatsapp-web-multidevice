@@ -67,7 +67,7 @@ func processHistorySync(ctx context.Context, data *waHistorySync.HistorySync, ch
 	log.Infof("Processing history sync type: %s", syncType.String())
 
 	switch syncType {
-	case waHistorySync.HistorySync_INITIAL_BOOTSTRAP, waHistorySync.HistorySync_RECENT, waHistorySync.HistorySync_ON_DEMAND:
+	case waHistorySync.HistorySync_INITIAL_BOOTSTRAP, waHistorySync.HistorySync_RECENT, waHistorySync.HistorySync_FULL, waHistorySync.HistorySync_ON_DEMAND:
 		// Process conversation messages. ON_DEMAND is the phone's reply to a
 		// history sync request built with Client.BuildHistorySyncRequest (older
 		// messages fetched on demand, e.g. "load older messages"); it carries
@@ -300,7 +300,8 @@ func processConversationMessages(ctx context.Context, data *waHistorySync.Histor
 			}
 
 			storeChat := true
-			if data.GetSyncType() == waHistorySync.HistorySync_ON_DEMAND {
+			if t := data.GetSyncType(); t == waHistorySync.HistorySync_ON_DEMAND || t == waHistorySync.HistorySync_FULL {
+				// FULL chunks (full history sync on pairing) also carry older messages.
 				// ON_DEMAND delivers messages older than the local anchor, so its
 				// batch timestamp must never move the chat's activity time backward
 				// or clobber flags (e.g. archived) that live history didn't touch.
